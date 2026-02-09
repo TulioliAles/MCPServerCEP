@@ -19,12 +19,35 @@ await app.RunAsync();
 [McpServerToolType]
 public class CepTools
 {
-    [McpServerTool, Description("Consulta informações sobre o CEP fornecido")]
+    [
+        McpServerTool (Name = "FerramentaConsultarCEP"), 
+        Description("Consulta informações sobre o CEP fornecido")
+    ]
     public async Task<ViaCepResultado> ConsultarCEP([Description("O CEP que será consultado")] string cep)
     {
         using var httpClient = new HttpClient();
 
         var response = await httpClient.GetAsync($"https://viacep.com.br/ws/{cep}/json/");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Erro ao consultar o CEP.{response.StatusCode}");
+        }
+
+        var resultado = await response.Content.ReadFromJsonAsync<ViaCepResultado>();
+
+        return resultado ?? throw new Exception("Falha ao converter resposta.");
+    }
+
+    [McpServerTool, Description("Consulta informações sobre o CEP a partir de UF, cidade e logradouro")]
+     public async Task<ViaCepResultado> ConsultarCEPLogradouro(
+        [Description("UF do endereço")] string uf, 
+        [Description("Cidade do endereço")] string cidade, 
+        [Description("Logradouro do endereço")] string logradouro)
+    {
+        using var httpClient = new HttpClient();
+
+        var response = await httpClient.GetAsync($"https://viacep.com.br/ws/{uf}/{cidade}/{logradouro}/json/");
 
         if (!response.IsSuccessStatusCode)
         {
